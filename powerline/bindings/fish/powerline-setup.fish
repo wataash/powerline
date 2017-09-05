@@ -24,13 +24,29 @@ function powerline-setup
 	if test -z "$POWERLINE_CONFIG_COMMAND"
 		if which powerline-config >/dev/null
 			set -g POWERLINE_CONFIG_COMMAND powerline-config
-		else
+		else if test -f (dirname (status -f))/../../../../../../bin/powerline-config
+			# In case of having:
+			#   ~/.local/lib/python2.7/site-packages/powerline/bindings/fish/powerline-setup.fish
+			#   ~/.local/bin/powerline-config from
+			# or
+			#   /usr/local/bin/powerline-config
+			#   and
+			#   /usr/local/lib/python2.7/site-packages/powerline/bindings/fish/powerline-setup.fish
+			set -g POWERLINE_CONFIG_COMMAND (dirname (status -f))/../../../../../../bin/powerline-config
+		else if test -f (dirname (status -f))/../../../scripts/powerline-config
+			# Which platfrom have this case?
 			set -g POWERLINE_CONFIG_COMMAND (dirname (status -f))/../../../scripts/powerline-config
+		else
+			echo powerline-config executable not found, unable to proceed >&2
+			return 1
 		end
 	end
 
+	# TODO: replace with `eval` to avoid compatibility issue of /usr/bin/env.
 	if env $POWERLINE_CONFIG_COMMAND shell --shell=fish uses prompt
 		if test -z "$POWERLINE_COMMAND"
+			# TODO: On Ubuntu: returns nothing?
+			#       maybe `powerline` must be in PATH.
 			set -g POWERLINE_COMMAND (env $POWERLINE_CONFIG_COMMAND shell command)
 		end
 		function _powerline_set_default_mode --on-variable fish_key_bindings
